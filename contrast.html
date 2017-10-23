@@ -1,0 +1,156 @@
+<html>
+  <head>
+    <script src="js/jquery.js" type="text/javascript"></script>
+    <script src="js/contrast.js" type="text/javascript"></script>
+    <link href="css/contrast.css" rel="stylesheet" type="text/css"/>
+  </head>
+  <body>
+    <h2>
+      Contrast
+    </h2>
+    <p>
+      Description
+    </p>
+    <canvas id="contrast" height="700" width="500"></canvas>
+    <script type="text/javascript">
+  
+
+      function renderLine ( ctx, width, height, l )
+      {
+        ctx.moveTo(l[0].i * width, l[0].j * height);
+        for (var n = 1; n  < l.length; n++)
+        {
+          ctx.lineTo(l[n].i * width, l[n].j * height);
+        }
+        ctx.stroke();
+      }
+
+      function renderPolygon ( ctx, width, height, p , color)
+      {
+        ctx.fillStyle = color;
+        ctx.strokeStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(p[0].i*width, p[0].j*height);
+        for (var n = 1; n < p.length; n++)
+        {
+          ctx.lineTo(p[n].i*width,p[n].j*height);
+        }
+        ctx.closePath();
+        ctx.stroke();
+        ctx.fill();
+      }
+
+      var render_intersection_points = false;
+      var render_lines = false;
+
+      var param = { 
+        nH: 7,   // Number of horizontal polylines
+        nV: 6,   // Number of vertical polylines
+        d: 2.1,     // offset factor of a polyline vertext, 1/d
+        canvas_height:  700,
+        canvas_width:   500,
+      };
+      var lines = mkLines(param);
+      var c = document.getElementById('contrast');
+      var ctx = c.getContext('2d');
+
+      // Render guide lines
+
+      ctx.strokeStyle = "blue";
+      for (n = 1; n < (param.nV-1); n++)
+      {
+        ctx.moveTo((n/(param.nV-1)*param.canvas_width),0);
+        ctx.lineTo((n/(param.nV-1)*param.canvas_width),param.canvas_height);
+        ctx.stroke();
+      }
+      for (n = 1; n < (param.nH-1); n++)
+      {
+        ctx.moveTo(0,(n/(param.nH-1)*param.canvas_height));
+        ctx.lineTo(param.canvas_width,(n/(param.nH-1)*param.canvas_height));
+        ctx.stroke();
+      }
+
+      // Render the poligons
+
+      var C = [
+                [ "S","L","L","S" ],
+                [ "L","S","S","S" ],
+                [ "S","L","S","L" ],
+                [ "L","S","L","S" ],
+                [ "L","S","S","S" ],
+                [ "S","L","L","S" ]
+             ];
+                   
+
+      var M = mkPolygonMatrix(param,lines);
+      var color = randomColour();
+      var prev_color = color;
+      for (var n = 0; n < (param.nH-1); n++)
+      {
+//        color = randomColour();
+
+        for (var m = 0; m < (param.nV-1); m++)
+        {
+          renderPolygon(ctx,param.canvas_width,param.canvas_height,M[m][n],color);
+          prev_color = color;
+          color = similarRandomColour(prev_color,100,150);
+/*
+          if (m < (param.nV -2))
+          {
+            if (C[n][m] == "S") 
+            {
+              color = similarRandomColour(prev_color,10,60);
+            }
+            else if (C[n][m] == "L")
+            {
+              color = similarRandomColour(prev_color,100,150);
+            }
+          }
+*/
+        }
+      }
+      // Render the intersection points
+
+      if (render_intersection_points) 
+      {
+      for (var n = 0; n < param.nH; n++) 
+      {
+        for (var u = 0; u < (lines.H[n].length-1); u++) 
+        {
+          for (var m = 0; m < param.nV; m++)
+          {
+            for (var v = 0; v < (lines.V[m].length-1); v++)
+            {
+              var hline = [ lines.H[n][u], lines.H[n][u+1] ];
+              var vline = [ lines.V[m][v], lines.V[m][v+1] ];
+              var vertex = getIntersection( hline, vline);
+              if (vertex != null)
+              {
+                ctx.beginPath();
+                ctx.arc(vertex.i*param.canvas_width,vertex.j*param.canvas_height,10,0,2*Math.PI);
+                ctx.fillStyle = "red";
+                ctx.fill();
+              }
+            }
+          }
+        }
+      }
+      }
+  
+      // Render the lines
+
+      if (render_lines)
+      {
+      ctx.strokeStyle = "black";
+      for (var n = 0; n < param.nH; n++)
+      {
+        renderLine(ctx,param.canvas_width,param.canvas_height,lines.H[n]);
+      }
+      for (var n = 0; n < param.nV; n++) 
+      {
+        renderLine(ctx,param.canvas_width,param.canvas_height,lines.V[n]);
+      }
+      }
+    </script>
+  </body>
+</html>
